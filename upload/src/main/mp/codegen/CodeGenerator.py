@@ -176,9 +176,9 @@ class CodeGenVisitor(BaseVisitor, Utils):
         ctxt = o
         frame = ctxt.frame
         env = ctxt.sym 
-        rhs_value, rhs_type = self.visit(ast.exp, Access(frame, env, False, True))
-        lhs_name, lhs_type = self.visit(ast.lhs, Access(frame, env, True, True))
-        result = rhs_value + self.emit.emitPUTSTATIC("MPClass/"+lhs_name, lhs_type, frame)
+        rhs_code, rhs_type = self.visit(ast.exp, Access(frame, env, False, True))
+        lhs_code, lhs_type = self.visit(ast.lhs, Access(frame, env, True, True))
+        result = rhs_code + lhs_code
         self.emit.printout(result)
 
     def visitCallStmt(self, ast, o):
@@ -204,8 +204,6 @@ class CodeGenVisitor(BaseVisitor, Utils):
         ctxt = o
         frame = ctxt.frame
         nenv = ctxt.sym
-
-
         valL, typL = self.visit(ast.left, o)
         valR, typR = self.visit(ast.right, o) 
         if type(typL) is FloatType or type(typR) is FloatType:
@@ -225,26 +223,67 @@ class CodeGenVisitor(BaseVisitor, Utils):
         result = valL + valR + op 
         return result, mtype
 
+    def visitUnaryOp(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        nenv = ctxt.sym
+        codeOp, typeOp = self.visit(ast.body, o)
+        if type(typeOp) is IntType or FloatType:
+            result = codeOp + self.emit.emitNEGOP(typeOp, frame)
+            return result, typeOp
+        else:
+            result = codeOp + self.emit.emitNOT(typeOp, frame)
+            return result, BoolType()
+
+    def visitCallExpr(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        nenv = ctxt.sym
+        sym = self.lookup(ast.method.name, nenv, lambda x: x.name)
+        cname = sym.value.value
+    
+        ctype = sym.mtype
+
+        in_ = ("", list())
+        for x in ast.param:
+            str1, typ1 = self.visit(x, Access(frame, nenv, False, True))
+            in_ = (in_[0] + str1, in_[1].append(typ1))
+        res = in_[0] + self.emit.emitINVOKESTATIC(cname + "/" + ast.method.name, ctype, frame)
+        return res, sym.mtype.rettype
+
     def visitId(self, ast, o):
         ctxt = o
         frame = ctxt.frame
-        res = self.lookup(ast.name, o.sym, lambda x: x.name)
+        res = self.lookup(ast.name.lower(), o.sym, lambda x: x.name)
         if o.isLeft:
-            return res.name, res.mtype
+            if type(res.value) is CName:
+                return self.emit.emitPUTSTATIC("MPClass/"+res.name, res.mtype, frame), res.mtype
+            else: 
+                return "",VoidType()
         else:
-            return self.emit.emitGETSTATIC(res.name,res.mtype,frame), res.mtype
+            if type(res.value) is CName:
+                return self.emit.emitGETSTATIC('MPClass/'+res.name, res.mtype, frame), res.mtype
+            else:
+                return "",VoidType()
 
     def visitIntLiteral(self, ast, o):
-        #ast: IntLiteral
-        #o: Any
         ctxt = o
         frame = ctxt.frame
         return self.emit.emitPUSHICONST(ast.value, frame), IntType()
-    
-    def visitFloatLiteral(self, ast, o):
 
+    def visitFloatLiteral(self, ast, o):
         ctxt = o 
         frame = ctxt.frame
         return self.emit.emitPUSHFCONST(str(ast.value), frame), FloatType()
+
+    def visitBooleanLiteral(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        return self.emit.emitPUSHICONST(str(ast.value).lower(), frame), BoolType()
+    
+    def visitStringLiteral(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        return self.emit.emitPUSHCONST(ast.value, StringType(), frame), StringType()
 
     
