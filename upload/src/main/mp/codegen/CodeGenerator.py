@@ -140,15 +140,21 @@ class CodeGenVisitor(BaseVisitor, Utils):
             self.emit.printout(self.emit.emitVAR(frame.getNewIndex(), "this", ClassType(self.className), frame.getStartLabel(), frame.getEndLabel(), frame))
         if isMain:
             self.emit.printout(self.emit.emitVAR(frame.getNewIndex(), "args", ArrayPointerType(StringType()), frame.getStartLabel(), frame.getEndLabel(), frame))
-
+        
+        param = consdecl.param 
+        local = param + consdecl.local
+        e = SubBody(frame,glenv)
+        for x in local:
+            e = self.visit(x,e)
         body = consdecl.body
+
         self.emit.printout(self.emit.emitLABEL(frame.getStartLabel(), frame))
 
         # Generate code for statements
         if isInit:
             self.emit.printout(self.emit.emitREADVAR("this", ClassType(self.className), 0, frame))
             self.emit.printout(self.emit.emitINVOKESPECIAL(frame))
-        list(map(lambda x: self.visit(x, SubBody(frame, glenv)), body))
+        stmt = list(map(lambda x: self.visit(x, e), body))
 
         self.emit.printout(self.emit.emitLABEL(frame.getEndLabel(), frame))
         if type(returnType) is VoidType:
@@ -157,11 +163,15 @@ class CodeGenVisitor(BaseVisitor, Utils):
         frame.exitScope();
 
     def visitVarDecl(self, ast, o):
-        subctxt = o
+        ctxt = o
         name = ast.variable.name
         mtype = ast.varType
-        self.emit.printout(self.emit.emitATTRIBUTE(name, mtype, None, None))
-        return SubBody(None, [Symbol(ast.variable.name,ast.varType, CName(self.className))] + subctxt.sym)
+        if not ctxt.frame:
+            self.emit.printout(self.emit.emitATTRIBUTE(name, mtype, None, None))
+            return SubBody(None, [Symbol(ast.variable.name,ast.varType, CName(self.className))] + ctxt.sym)
+        else:
+            self.emit.printout(self.emit.emitVAR(ctxt.frame.getNewIndex(), name, mtype, ctxt.frame.getStartLabel(), ctxt.frame.getEndLabel(), ctxt.frame))
+            return SubBody(ctxt.frame, [Symbol(ast.variable.name,ast.varType,ctxt.frame.getCurrIndex()-1)] + ctxt.sym)
 
     def visitFuncDecl(self, ast, o):
         #ast: FuncDecl
@@ -181,10 +191,24 @@ class CodeGenVisitor(BaseVisitor, Utils):
         result = rhs_code + lhs_code
         self.emit.printout(result)
 
-    def visitCallStmt(self, ast, o):
-        #ast: CallStmt
-        #o: Any
+    def visitIf(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        env = ctxt.sym
+        result = ""
+        expr, mtype = self.visit(ast.expr, Access(frame, env, False, False))
+        result.append(expr)
+        falseLabel = frame.getNewLabel()
+        endLabel = frame.getNewLabel()
+        result.append(self.emit.emitIFFALSE(falseLabel, frame))
+        thenStmt = list(map(lambda x: self.visit(x,SubBody(frame,env)), ast.thenStmt))
+        result.append(self.emit.emitGOTO(endLabel, frame))
+        result.append(self.emit.emitLABEL(falseLabel, frame))
+        elseStmt = list(map(lambda x: self.visit(x,SubBody(frame,env)), ast.elseStmt))
+        result.append(self.emit.emitLABEL(endLabel, frame))
+        self.emit.printout(result)
 
+    def visitCallStmt(self, ast, o):
         ctxt = o
         frame = ctxt.frame
         nenv = ctxt.sym
@@ -204,6 +228,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         ctxt = o
         frame = ctxt.frame
         nenv = ctxt.sym
+
         valL, typL = self.visit(ast.left, o)
         valR, typR = self.visit(ast.right, o) 
         if type(typL) is FloatType or type(typR) is FloatType:
@@ -214,12 +239,24 @@ class CodeGenVisitor(BaseVisitor, Utils):
                 valR = valR + self.emit.emitI2F(frame)
         elif ast.op == '/':
             mtype = FloatType()
-        else:
+        elif ast.op.lower() in ["<","<=",">",">=","<>","=","and","andthen","or","orelse"]:
+            mtype = BoolType()
+        else: 
             mtype = IntType()
         if ast.op == "+" or ast.op == "-":
             op = self.emit.emitADDOP(ast.op, mtype, frame)
         elif ast.op =="*" or ast.op == "/":
             op = self.emit.emitMULOP(ast.op, mtype, frame)
+        elif ast.op.lower() == "div":
+            op = self.emit.emitDIV(frame)
+        elif ast.op.lower() == "mod":
+            op = self.emit.emitMOD(frame)
+        elif ast.op.lower() == "and":
+            op = self.emit.emitANDOP(frame)
+        elif ast.op.lower() == "or":
+            op = self.emit.emitOROP(frame)
+        else:
+            op = self.emit.emitREOP(ast.op, mtype, frame)
         result = valL + valR + op 
         return result, mtype
 
@@ -259,12 +296,16 @@ class CodeGenVisitor(BaseVisitor, Utils):
             if type(res.value) is CName:
                 return self.emit.emitPUTSTATIC("MPClass/"+res.name, res.mtype, frame), res.mtype
             else: 
-                return "",VoidType()
+                return self.emit.emitWRITEVAR(res.name, res.mtype, res.value, frame), res.mtype
         else:
             if type(res.value) is CName:
                 return self.emit.emitGETSTATIC('MPClass/'+res.name, res.mtype, frame), res.mtype
             else:
-                return "",VoidType()
+                return self.emit.emitREADVAR(res.name, res.mtype, res.value, frame), res.mtype
+
+    def visitArrayCell(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
 
     def visitIntLiteral(self, ast, o):
         ctxt = o

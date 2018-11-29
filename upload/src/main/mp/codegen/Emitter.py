@@ -18,6 +18,8 @@ class Emitter():
             return "I"
         elif typeIn is FloatType:
             return "F"
+        elif typeIn is BoolType:
+            return "Z"
         elif typeIn is cgen.StringType:
             return "Ljava/lang/String;"
         elif typeIn is VoidType:
@@ -147,8 +149,10 @@ class Emitter():
         #... -> ..., value
         
         frame.push()
-        if type(inType) is IntType:
+        if type(inType) is IntType or type(inType) is BoolType:
             return self.jvm.emitILOAD(index)
+        elif type(inType) is FloatType:
+            return self.jvm.emitFLOAD(index)
         elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitALOAD(index)
         else:
@@ -179,8 +183,10 @@ class Emitter():
         
         frame.pop()
 
-        if type(inType) is IntType:
+        if type(inType) is IntType or type(inType) is BoolType:
             return self.jvm.emitISTORE(index)
+        elif type(inType) is FloatType:
+            return self.jvm.emitFSTORE(index)
         elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitASTORE(index)
         else:
