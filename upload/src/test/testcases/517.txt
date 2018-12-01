@@ -1,0 +1,1 @@
+Program([FuncDecl(Id(main),[],VoidType(),[VarDecl(Id(i1),IntType),VarDecl(Id(i2),IntType)],[For(Id(i1)IntLiteral(2),IntLiteral(1),False,[CallStmt(Id(putInt),[Id(i1)]),For(Id(i2)IntLiteral(1),IntLiteral(5),True,[CallStmt(Id(putInt),[Id(i2)])])])]),Return(None)])

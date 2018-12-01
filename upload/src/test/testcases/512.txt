@@ -1,0 +1,1 @@
+Program([FuncDecl(Id(main),[],VoidType(),[],[CallStmt(Id(putFloat),[BinaryOp(+,BinaryOp(/,BinaryOp(-,IntLiteral(8),IntLiteral(2)),IntLiteral(3)),BinaryOp(*,BinaryOp(/,IntLiteral(9),IntLiteral(3)),BinaryOp(/,IntLiteral(6),IntLiteral(2))))]),Return(None)])])

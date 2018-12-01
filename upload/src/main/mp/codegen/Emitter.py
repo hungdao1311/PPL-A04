@@ -429,7 +429,7 @@ class Emitter():
             result.append(self.jvm.emitIFICMPGT(labelF))
         elif op == "!=":
             result.append(self.jvm.emitIFICMPEQ(labelF))
-        elif op == "==":
+        elif op == "=":
             result.append(self.jvm.emitIFICMPNE(labelF))
         result.append(self.emitPUSHCONST("1", IntType(), frame))
         frame.pop()
@@ -462,7 +462,7 @@ class Emitter():
             result.append(self.jvm.emitIFICMPGT(falseLabel))
         elif op == "!=":
             result.append(self.jvm.emitIFICMPEQ(falseLabel))
-        elif op == "==":
+        elif op == "=":
             result.append(self.jvm.emitIFICMPNE(falseLabel))
         result.append(self.jvm.emitGOTO(trueLabel))
         return ''.join(result)
@@ -580,11 +580,17 @@ class Emitter():
         #in_: Type
         #frame: Frame
 
-        if type(in_) is IntType:
+        if type(in_) is IntType or type(in_) is BoolType:
+            frame.pop()
+            return self.jvm.emitIRETURN()
+        elif type(in_) is FloatType:
             frame.pop()
             return self.jvm.emitIRETURN()
         elif type(in_) is VoidType:
             return self.jvm.emitRETURN()
+        else:
+            frame.pop()
+            return self.jvm.emitARETURN()
 
     ''' generate code that represents a label	
     *   @param label the label
@@ -604,7 +610,7 @@ class Emitter():
         #label: Int
         #frame: Frame
 
-        return self.jvm.emitGOTO(label)
+        return self.jvm.emitGOTO(str(label))
 
     ''' generate some starting directives for a class.<p>
     *   .source MPC.CLASSNAME.java<p>
