@@ -1,0 +1,1 @@
+Program([VarDecl(Id(b),StringType),VarDecl(Id(c),IntType),FuncDecl(Id(main),[],VoidType(),[],[CallStmt(Id(putString),[StringLiteral(put68)])])])

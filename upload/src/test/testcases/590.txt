@@ -1,0 +1,1 @@
+Program([FuncDecl(Id(main),[],VoidType(),[],[CallStmt(Id(putInt),[IntLiteral(9)]),CallStmt(Id(putLn),[]),CallStmt(Id(putIntLn),[FloatLiteral(0)])])])

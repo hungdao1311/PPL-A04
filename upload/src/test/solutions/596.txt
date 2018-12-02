@@ -1,0 +1,2 @@
+string ket hop voi int
+96

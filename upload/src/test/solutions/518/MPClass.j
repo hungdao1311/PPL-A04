@@ -6,10 +6,10 @@
 .var 0 is args [Ljava/lang/String; from Label0 to Label1
 .var 1 is a Z from Label0 to Label1
 Label0:
-	iconst_3
+	bipush 9
 	iconst_4
 	iadd
-	iconst_5
+	bipush 20
 	if_icmple Label2
 	iconst_1
 	goto Label3
@@ -30,10 +30,10 @@ Label6:
 Label7:
 	goto Label5
 Label4:
-	iconst_0
+	iconst_1
 	invokestatic io/putBoolLn(Z)V
 Label5:
-	iconst_1
+	bipush 8
 	invokestatic io/putInt(I)V
 Label1:
 	return

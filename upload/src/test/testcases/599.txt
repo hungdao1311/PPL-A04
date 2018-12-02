@@ -1,0 +1,1 @@
+Program([FuncDecl(Id(main),[],VoidType(),[],[CallStmt(Id(putString),[StringLiteral(string ket hop voi bool )]),CallStmt(Id(putBool),[BooleanLiteral(False)])])])

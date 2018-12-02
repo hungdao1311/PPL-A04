@@ -1,0 +1,1 @@
+Program([VarDecl(Id(a),BoolType),FuncDecl(Id(main),[],VoidType(),[],[AssignStmt(Id(a),BooleanLiteral(False)),CallStmt(Id(putBoolLn),[UnaryOp(not,Id(a))])])])

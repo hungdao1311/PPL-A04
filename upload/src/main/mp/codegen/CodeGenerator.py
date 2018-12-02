@@ -18,15 +18,15 @@ class CodeGenerator(Utils):
 
     def init(self):
         return [Symbol("getint", MType(list(), IntType()), CName(self.libName)),
-                    Symbol("putint", MType([IntType()], VoidType()), CName(self.libName)),
-                    Symbol("putintln", MType([IntType()], VoidType()), CName(self.libName)),
-                    Symbol("putfloat", MType([FloatType()], VoidType()), CName(self.libName)),
-                    Symbol("putfloatln", MType([FloatType()], VoidType()), CName(self.libName)),
-                    Symbol("putbool",MType([BoolType()],VoidType()), CName(self.libName)),
-                    Symbol("putboolln",MType([BoolType()],VoidType()), CName(self.libName)),
-                    Symbol("putstring",MType([StringType()],VoidType()), CName(self.libName)),
-                    Symbol("puttringln",MType([StringType()],VoidType()), CName(self.libName)),
-                    Symbol("putln",MType([],VoidType()), CName(self.libName))
+                    Symbol("putInt", MType([IntType()], VoidType()), CName(self.libName)),
+                    Symbol("putIntLn", MType([IntType()], VoidType()), CName(self.libName)),
+                    Symbol("putFloat", MType([FloatType()], VoidType()), CName(self.libName)),
+                    Symbol("putFloatLn", MType([FloatType()], VoidType()), CName(self.libName)),
+                    Symbol("putBool",MType([BoolType()],VoidType()), CName(self.libName)),
+                    Symbol("putBoolLn",MType([BoolType()],VoidType()), CName(self.libName)),
+                    Symbol("putString",MType([StringType()],VoidType()), CName(self.libName)),
+                    Symbol("putStringLn",MType([StringType()],VoidType()), CName(self.libName)),
+                    Symbol("putLn",MType([],VoidType()), CName(self.libName))
                     ]
                     
 
@@ -185,13 +185,13 @@ class CodeGenVisitor(BaseVisitor, Utils):
         frame = Frame(ast.name.name, ast.returnType)
         intype = list(map(lambda x: x.varType, ast.param))
         self.genMETHOD(ast, subctxt.sym, frame)
-        return SubBody(None, [Symbol(ast.name.name.lower(), MType(intype, ast.returnType), CName(self.className))] + subctxt.sym)
+        return SubBody(None, [Symbol(ast.name.name, MType(intype, ast.returnType), CName(self.className))] + subctxt.sym)
 
     def visitCallStmt(self, ast, o):
         ctxt = o
         frame = ctxt.frame
         nenv = ctxt.sym
-        sym = self.lookup(ast.method.name.lower(), nenv, lambda x: x.name)
+        sym = self.lookup(ast.method.name, nenv, lambda x: x.name)
         cname = sym.value.value
     
         ctype = sym.mtype
@@ -269,7 +269,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         frame = ctxt.frame
         nenv = ctxt.sym
         codeOp, typeOp = self.visit(ast.body, o)
-        if type(typeOp) is IntType or FloatType:
+        if type(typeOp) is IntType or type(typeOp) is FloatType:
             result = codeOp + self.emit.emitNEGOP(typeOp, frame)
             return result, typeOp
         else:
@@ -280,7 +280,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         ctxt = o
         frame = ctxt.frame
         nenv = ctxt.sym
-        sym = self.lookup(ast.method.name.lower(), nenv, lambda x: x.name)
+        sym = self.lookup(ast.method.name, nenv, lambda x: x.name)
         cname = sym.value.value
     
         ctype = sym.mtype
@@ -458,6 +458,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
     def visitStringLiteral(self, ast, o):
         ctxt = o
         frame = ctxt.frame
-        return self.emit.emitPUSHCONST(ast.value, StringType(), frame), StringType()
+        mstr = '"' + ast.value + '"'
+        return self.emit.emitPUSHCONST(mstr, StringType(), frame), StringType()
 
     
